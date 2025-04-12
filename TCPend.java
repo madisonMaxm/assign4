@@ -31,18 +31,15 @@ public class TCPend{
             sws = args[11];
 
             try {
-                Socket socket = new DatagramSocket(port);
-                OutputStream out = socket.getOutputStream();
+                DatagramSocket socket = new DatagramSocket(Integer.parseInt(port));
 
-                File file = File(fileName);
-                Long fileSize = file.length();
-                FileReader fis = new FileInputStream(fileName); //TODO add path if needed
+                FileInputStream fis = new FileInputStream(fileName); //TODO add path if needed
                 
                 byte[] buffer = new byte[1024];
                 int bytesRead;
 
                 while ((bytesRead = fis.read(buffer)) != -1) {
-                    DatagramPacket packet = new DatagramPacket(buffer, bytesRead, remoteIP, remotePort);
+                    DatagramPacket packet = new DatagramPacket(buffer, bytesRead, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
                     socket.send(packet);
             }
 
@@ -74,16 +71,18 @@ public class TCPend{
             fileName = args[7];
 
             try {
-                DatagramSocket datagramSocket = new DatagramSocket(port);
-                datagramSocket.accept();
+                DatagramSocket datagramSocket = new DatagramSocket(Integer.parseInt(port));
+                System.out.println("Receiver on port: " + port);
 
                 FileOutputStream fos = new FileOutputStream(fileName);
 
                 byte[] buffer = new byte[1024];
+
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 
                 while (true) {
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                    socket.receive(packet);
+                    
+                    datagramSocket.receive(packet);
         
                     if (packet.getLength() == 0) {
                         // empty packet signals end of file
@@ -91,14 +90,15 @@ public class TCPend{
                     }
 
                     fos.write(packet.getData(), 0, packet.getLength());
-
                 }
                 
-                System.out.println("Server listening on port: " + port);
+                fos.close();
+                datagramSocket.close();
             } catch (IOException e){
                 System.out.println("Error listening on port: " + e);
 			}
             finally {
+                
                 System.exit(0);
             }
 
