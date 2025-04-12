@@ -19,6 +19,7 @@ public class TCPend{
             System.out.println("Sender initialization");
 
             if (args[0] != "-p" || args[2] != "-s" || args[4] != "-a" || args[6] != "-f" || args[8] != "-m" || args[10] != "-c") {
+                System.err.println(args[0] + " " + args[2] + " " + args[3] + " " + args[4] + " " + args[6] + " " + args[8] + " " + args[10]);
                 System.out.println("Error: Arguments out of order");
 				System.exit(1);
             }
