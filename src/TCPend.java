@@ -18,7 +18,7 @@ public class TCPend{
             MODE = "sender";
             System.out.println("Sender initialization");
 
-            if (args[0] != "-p" || args[2] != "-s" || args[4] != "-a" || args[6] != "-f" || args[8] != "-m" || args[10] != "-c") {
+            if (!args[0].equals("-p") || !args[2].equals("-s") || !args[4].equals("-a") || !args[6].equals("-f") || !args[8].equals("-m") || !args[10].equals("-c")) {
                 System.err.println(args[0] + " " + args[2] + " " + args[4] + " " + args[6] + " " + args[8] + " " + args[10]);
                 System.out.println("Error: Arguments out of order");
 				System.exit(1);
@@ -60,7 +60,7 @@ public class TCPend{
             MODE = "receiver";
             System.out.println("Receiver initalization");
 
-            if (args[0] != "-p" || args[2] != "-m" || args[4] != "-c" || args[6] != "-f")
+            if (!args[0].equals("-p") || !args[2].equals("-m") || !args[4].equals("-c") || !args[6].equals("-f"))
             {
                 System.out.println("Error: Arguments out of order");
 				System.exit(1);
