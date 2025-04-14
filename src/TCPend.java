@@ -43,7 +43,14 @@ public class TCPend{
                     DatagramPacket packet = new DatagramPacket(buffer, 0, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
                     socket.send(packet);
             }
+            
+            //close and clean
+            fis.close();
+            DatagramPacket endPacket = new DatagramPacket(new byte[0], 0, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
+            socket.send(endPacket);
+            socket.close();
 
+            
 
 
             } catch (UnknownHostException e) {
