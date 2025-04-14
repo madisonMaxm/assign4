@@ -36,10 +36,12 @@ public class TCPend{
 
                 FileInputStream fis = new FileInputStream(fileName);
                 
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[Integer.parseInt(mtu)];
                 int bytesRead;
 
                 while ((bytesRead = fis.read(buffer)) != -1) {
+
+                    
                     DatagramPacket packet = new DatagramPacket(buffer, 0, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
                     socket.send(packet);
             }
@@ -50,7 +52,7 @@ public class TCPend{
             socket.send(endPacket);
             socket.close();
 
-            
+
 
 
             } catch (UnknownHostException e) {
@@ -84,12 +86,12 @@ public class TCPend{
 
                 FileOutputStream fos = new FileOutputStream(fileName);
 
-                byte[] buffer = new byte[1024];
-
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                byte[] buffer = new byte[Integer.parseInt(mtu)];                
                 
                 while (true) {
-                    
+
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+            
                     datagramSocket.receive(packet);
         
                     if (packet.getLength() == 0) {
