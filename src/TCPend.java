@@ -41,7 +41,7 @@ public class TCPend{
 
                 while ((bytesRead = fis.read(buffer)) != -1) {
 
-                    
+                    System.out.println("sending packet");
                     DatagramPacket packet = new DatagramPacket(buffer, 0, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
                     socket.send(packet);
             }
@@ -89,6 +89,8 @@ public class TCPend{
                 byte[] buffer = new byte[Integer.parseInt(mtu)];                
                 
                 while (true) {
+
+                    System.out.println("Receiving packet");
 
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             
