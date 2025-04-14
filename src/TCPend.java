@@ -34,7 +34,7 @@ public class TCPend{
             try {
                 DatagramSocket socket = new DatagramSocket(Integer.parseInt(port));
 
-                FileInputStream fis = new FileInputStream(fileName); //TODO add path if needed
+                FileInputStream fis = new FileInputStream(fileName);
                 
                 byte[] buffer = new byte[1024];
                 int bytesRead;
