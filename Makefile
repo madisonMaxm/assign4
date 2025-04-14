@@ -1,12 +1,14 @@
+run:
+	echo "Hello from make!"
+
 sender: ./src/TCPend.class
-	java -cp ./src/TCPend.java -p 55000 -a 10.0.2.102 -f "../testSend.txt" -m 1000 -c 1000
+	java -cp ./src TCPend -p 55000 -s 10.0.2.102 -a 55000 -f testSend.txt -m 1430 -c 1000
 
 receiver: ./src/TCPend.class
-	java -cp ./src/TCPend.java -p 55000 -m 1000 -c 1000 -f "../testReceive.txt"
+	java -cp ./src TCPend -p 55000 -m 1430 -c 1000 -f testReceive.txt
 
-#Compile
-./src/TCPend.class
-	javac -d ./src -cp ./src/TCPend.java
+./src/TCPend.class: ./src/TCPend.java
+	javac -d ./src -cp ./src ./src/TCPend.java
 
 clean:
-	rm -f *.class
+	rm -f ./src/*.class
