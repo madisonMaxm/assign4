@@ -40,7 +40,7 @@ public class TCPend{
                 int bytesRead;
 
                 while ((bytesRead = fis.read(buffer)) != -1) {
-                    DatagramPacket packet = new DatagramPacket(buffer, bytesRead, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
+                    DatagramPacket packet = new DatagramPacket(buffer, 0, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
                     socket.send(packet);
             }
 
