@@ -64,6 +64,8 @@ public class TCPend{
                     System.out.println("Serialized packet length: " + serialized.length);
 
                     DatagramPacket packet = new DatagramPacket(serialized, 0, serialized.length, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
+
+                    System.out.println("Sending packet to " + remoteIP + ":" + remotePort);
                     socket.send(packet);
 
                     //break if buffer not full
