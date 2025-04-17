@@ -135,7 +135,7 @@ public class TCPend{
 
                     TCPPacket tPacket = new TCPPacket(Integer.parseInt(mtu), data).deserialize();
 
-                    System.out.println("[Receiver] Deserialized TCPPacket — SeqNum: " + tPacket.getSeqNum() + ", AckNum: " + tPacket.getAckNum());
+                    System.out.println("[Receiver] Deserialized TCPPacket — SeqNum: " + tPacket.getSeqNum() + ", AckNum: " + tPacket.getAckNum() + " syn flag " + tPacket.synFlag);
 
                     InetAddress senderAddress = packet.getAddress();
                     int senderPort = packet.getPort();

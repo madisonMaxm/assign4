@@ -31,7 +31,7 @@ public class TCPPacket {
     }
 
     public TCPPacket(int mtu, byte[] serialPacket){
-        System.out.println("receiving TCPPacket. Line 34");
+        
         this.lengthField = mtu;
         this.serialPacket = serialPacket;
     }
