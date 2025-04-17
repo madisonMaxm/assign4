@@ -87,6 +87,7 @@ public class TCPPacket {
         bb.put(zeros); //16 bits of 0s
 
         // compute checksum if needed
+        /*/
          if (this.checksum == 0) {
             bb.rewind();
             int accumulation = 0;
@@ -98,7 +99,7 @@ public class TCPPacket {
             this.checksum = (short) (~accumulation & 0xffff);
             bb.putShort(22, this.checksum); //TODO is the index correct?
         }
-
+        */
         //add data to packet
         bb.put(this.payload);
 
