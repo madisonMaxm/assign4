@@ -31,6 +31,7 @@ public class TCPPacket {
     }
 
     public TCPPacket(int mtu, byte[] serialPacket){
+        System.out.println("receiving TCPPacket. Line 34");
         this.lengthField = mtu;
         this.serialPacket = serialPacket;
     }
@@ -113,6 +114,8 @@ public class TCPPacket {
      * @return - TCPPacket with deserialized data
      */
     public TCPPacket deserialize() {
+
+        System.out.println("deserializing TCPPacket");
 
         byte headerLength = 24; //based on 6x32 bit words
         int overallLength = this.lengthField + 24;;
