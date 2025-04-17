@@ -53,10 +53,17 @@ public class TCPend{
 
                     System.out.println("sending packet");
 
+                    System.out.println("Bytes read from file: " + bytesRead);
+    System.out.println("Payload (first few bytes): " + Arrays.toString(Arrays.copyOf(payload, Math.min(10, payload.length))));
+
+
                     TCPPacket tPacket = new TCPPacket
                     (Integer.parseInt(mtu), 0, true, false, false, payload); 
 
-                    DatagramPacket packet = new DatagramPacket(tPacket.serialize(), 0, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
+                    byte[] serialized = tPacket.serialize();
+                    System.out.println("Serialized packet length: " + serialized.length);
+
+                    DatagramPacket packet = new DatagramPacket(serialized, 0, serialized.length, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
                     socket.send(packet);
 
                     //break if buffer not full
@@ -110,6 +117,11 @@ public class TCPend{
                     System.out.println("Receiving packet");
 
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    
+                    System.out.println("[Receiver] Packet received from " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
+
+                    System.out.println("[Receiver] Packet length: " + packet.getLength());
+
             
                     datagramSocket.receive(packet);
         
@@ -118,12 +130,12 @@ public class TCPend{
                         break;
                     }
 
-                    byte[] data = packet.getData();
-                    int length = packet.getLength();
+                    byte[] data = packet.getData();                    
+
                     TCPPacket tPacket = new TCPPacket(Integer.parseInt(mtu), data).deserialize();
 
-                    System.out.println("Received T Packet parameters: " + tPacket.getSeqNum() + " " + tPacket.getAckNum());
-                    //TODO add header to MTU and create overal TPacketSize field
+                    System.out.println("[Receiver] Deserialized TCPPacket — SeqNum: " + tPacket.getSeqNum() + ", AckNum: " + tPacket.getAckNum());
+
                     InetAddress senderAddress = packet.getAddress();
                     int senderPort = packet.getPort();
 
