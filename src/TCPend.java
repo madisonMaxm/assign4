@@ -117,13 +117,12 @@ public class TCPend{
                     System.out.println("Receiving packet");
 
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                    
+                                
+                    datagramSocket.receive(packet);
+
                     System.out.println("[Receiver] Packet received from " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
 
                     System.out.println("[Receiver] Packet length: " + packet.getLength());
-
-            
-                    datagramSocket.receive(packet);
         
                     if (packet.getLength() == 0) {
                         // empty packet signals end of file
