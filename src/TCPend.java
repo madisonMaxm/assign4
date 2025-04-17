@@ -58,7 +58,7 @@ public class TCPend{
 
 
                     TCPPacket tPacket = new TCPPacket
-                    (Integer.parseInt(mtu), 0, true, false, false, payload); 
+                    (Integer.parseInt(mtu), 1, true, true, false, payload); 
 
                     byte[] serialized = tPacket.serialize();
                     System.out.println("Serialized packet length: " + serialized.length);
