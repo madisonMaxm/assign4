@@ -1,5 +1,13 @@
+/**
+ * TCPend builds UDP functionality on top of UDP.
+ * 
+ * The class contains both sender and receiver endpoints.
+ * 
+ * @author Maxwell meller
+ */
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 
 public class TCPend{
 
@@ -41,19 +49,28 @@ public class TCPend{
 
                 while ((bytesRead = fis.read(buffer)) != -1) {
 
+                    byte[] payload = Arrays.copyOf(buffer, bytesRead);
+
                     System.out.println("sending packet");
-                    DatagramPacket packet = new DatagramPacket(buffer, 0, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
+
+                    TCPPacket tPacket = new TCPPacket
+                    (Integer.parseInt(mtu), 0, true, false, false, payload); 
+
+                    DatagramPacket packet = new DatagramPacket(tPacket.serialize(), 0, bytesRead, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
                     socket.send(packet);
+
+                    //break if buffer not full
+                    if (bytesRead < buffer.length) {
+                        break;
+                    }
             }
             
             //close and clean
             fis.close();
+            //TODO remove when TCP closing protocol is finalized
             DatagramPacket endPacket = new DatagramPacket(new byte[0], 0, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
             socket.send(endPacket);
             socket.close();
-
-
-
 
             } catch (UnknownHostException e) {
                 e.printStackTrace();
@@ -101,6 +118,15 @@ public class TCPend{
                         break;
                     }
 
+                    byte[] data = packet.getData();
+                    int length = packet.getLength();
+                    TCPPacket tPacket = new TCPPacket(Integer.parseInt(mtu), data).deserialize();
+
+                    System.out.println("Received T Packet parameters: " + tPacket.getSeqNum() + " " + tPacket.getAckNum());
+                    //TODO add header to MTU and create overal TPacketSize field
+                    InetAddress senderAddress = packet.getAddress();
+                    int senderPort = packet.getPort();
+
                     fos.write(packet.getData(), 0, packet.getLength());
                 }
                 
@@ -120,7 +146,5 @@ public class TCPend{
             System.out.println("Error: missing or additional arguments");
 			System.exit(1);
         }
-
     }
-
 }
