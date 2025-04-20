@@ -13,6 +13,7 @@ public class TCPPacket {
     protected int ackNum; // 4 byte
     protected long timeStamp; //8 byte
     protected int lengthField; //4 byte
+    protected int overallLength; 
     protected byte[] payload;
     protected boolean synFlag;
     protected boolean ackFlag;
@@ -20,13 +21,20 @@ public class TCPPacket {
     protected short checksum;
     protected byte[] serialPacket;
     
-    public TCPPacket(int mtu, int ackNum, boolean syn, boolean ack, boolean fin, byte[] payload){
-        this.lengthField = mtu;
+    public TCPPacket(int size, int seqNum, int ackNum, boolean syn, boolean ack, boolean fin, byte[] payload){
+        this.seqNum = seqNum;
+        this.lengthField = size;
+        this.overallLength = size + 24;
         this.ackNum = ackNum;
         this.synFlag = syn;
         this.ackFlag = ack;
         this.finFlag = fin;
         this.timeStamp = System.nanoTime();
+
+        if (payload == null){
+            this.payload = new byte[0];
+        }
+
         this.payload = payload;
     }
 
@@ -44,6 +52,18 @@ public class TCPPacket {
         this.ackNum = value;
     }
 
+    public boolean getSynFlag(){
+        return this.synFlag;
+    }
+
+    public boolean getAckFlag(){
+        return this.ackFlag;
+    }
+
+    public boolean getFinFlag(){
+        return this.finFlag;
+    }
+
     public int getSeqNum(){
         return this.seqNum;
     }
@@ -58,6 +78,10 @@ public class TCPPacket {
 
     public byte[] getPayload(){
         return this.payload;
+    }
+
+    public int getOverallLength(){
+        return this.overallLength;
     }
 
     /**
@@ -118,7 +142,7 @@ public class TCPPacket {
         System.out.println("deserializing TCPPacket");
 
         byte headerLength = 24; //based on 6x32 bit words
-        int overallLength = this.lengthField + 24;;
+        int overallLength = this.lengthField + 24;
 
         ByteBuffer bb = ByteBuffer.wrap(serialPacket);
         this.seqNum = bb.getInt();
@@ -139,4 +163,18 @@ public class TCPPacket {
     }
 
     //todo implement checksum
+
+
+    @Override
+    public String toString() {
+
+        String synFlag = this.synFlag ? "S" : "-";
+        String ackFlag = this.ackFlag ? "A" : "-";
+        String finFlag = this.finFlag ? "F" : "-";
+
+        
+        String output = synFlag + " " + ackFlag + " " + finFlag + " " + this.seqNum + " " + this.payload.length + " " + this.ackNum;
+
+        return output;
+    }
 }
