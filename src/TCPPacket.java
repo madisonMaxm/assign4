@@ -21,27 +21,30 @@ public class TCPPacket {
     protected short checksum;
     protected byte[] serialPacket;
     
-    public TCPPacket(int size, int seqNum, int ackNum, boolean syn, boolean ack, boolean fin, byte[] payload){
+    public TCPPacket(int seqNum, int ackNum, boolean syn, boolean ack, boolean fin, byte[] payload, long timeStamp){
+        if (payload == null){
+            this.payload = new byte[0];
+            System.out.println( " payload length 0");
+        }
+        else{
+            this.payload = payload;
+        }
+        
         this.seqNum = seqNum;
-        this.lengthField = size;
-        this.overallLength = size + 24;
+        this.lengthField = this.payload.length;
+        this.overallLength = this.payload.length + 24;
         this.ackNum = ackNum;
         this.synFlag = syn;
         this.ackFlag = ack;
         this.finFlag = fin;
-        this.timeStamp = System.nanoTime();
-
-        if (payload == null){
-            this.payload = new byte[0];
-        }
-
-        this.payload = payload;
+        this.timeStamp = timeStamp;
     }
 
-    public TCPPacket(int mtu, byte[] serialPacket){
+    public TCPPacket(byte[] serialPacket){
         
-        this.lengthField = mtu;
         this.serialPacket = serialPacket;
+        this.overallLength = serialPacket.length;
+        System.out.println("constructor overall length: " + serialPacket.length);
     }
 
     public void setSeqNum(int value){
@@ -84,6 +87,10 @@ public class TCPPacket {
         return this.overallLength;
     }
 
+    public int getPayloadLength(){
+        return this.payload.length;
+    }
+
     /**
      * Serializes all data from TCP Packet
      * @return byte array
@@ -110,23 +117,28 @@ public class TCPPacket {
 
         byte[] zeros = new byte[2];
         bb.put(zeros); //16 bits of 0s
+        bb.putShort((short) 0); //zero checksum field before calculating
 
-        // compute checksum if needed
-        /*/
+        System.out.println("length " + overallLength);
          if (this.checksum == 0) {
             bb.rewind();
             int accumulation = 0;
-            for (int i = 0; i < headerLength * 2; ++i) {
+            for (int i = 0; i < overallLength/2; ++i) {
                 accumulation += 0xffff & bb.getShort();
             }
             accumulation = ((accumulation >> 16) & 0xffff)
                     + (accumulation & 0xffff);
             this.checksum = (short) (~accumulation & 0xffff);
-            bb.putShort(22, this.checksum); //TODO is the index correct?
+            bb.putShort(22, this.checksum); 
         }
-        */
+        
         //add data to packet
         bb.put(this.payload);
+
+        // Serialization Debug
+        System.out.println("Serializing TCPPacket");
+        System.out.println("Payload Length: " + this.lengthField);
+        System.out.println("Overall Packet Length (Header + Payload): " + overallLength);
 
         return data;
     }
@@ -142,27 +154,61 @@ public class TCPPacket {
         System.out.println("deserializing TCPPacket");
 
         byte headerLength = 24; //based on 6x32 bit words
-        int overallLength = this.lengthField + 24;
 
         ByteBuffer bb = ByteBuffer.wrap(serialPacket);
         this.seqNum = bb.getInt();
         this.ackNum = bb.getInt();
         this.timeStamp = bb.getLong();
         int rawLengthField = bb.getInt();
+        this.lengthField = rawLengthField >> 3;
         this.synFlag = (rawLengthField & 0b001) != 0;
-        this.finFlag = (rawLengthField & 0b010) != 0;
-        this.ackFlag = (rawLengthField & 0b100) != 0;
-        this.lengthField = rawLengthField >>> 3 >> 3; //length in bytes?
+        this.ackFlag = (rawLengthField & 0b010) != 0;
+        this.finFlag = (rawLengthField & 0b100) != 0;
+        
+        //int payloadLength = Math.max(0, overallLength - 24); // remove header size
+
         bb.getShort(); // skip 2 bytes
 
         this.checksum = bb.getShort();
-        this.payload = new byte[Math.min(this.lengthField, overallLength - headerLength)];
-        bb.get(this.payload, 0, this.payload.length);
+        int payloadLength = serialPacket.length - 24;
+        this.payload = new byte[payloadLength];
+        if (payloadLength > 0) {
+            bb.get(this.payload);
+        }
+
+        /** Debugging output
+        System.out.println("Payload Length: " + this.lengthField);
+        System.out.println("Header Length: " + headerLength);
+        System.out.println("Total Packet Length: " + overallLength);
+        */
+
+        byte[] packetCopy = new byte[lengthField];
+        System.arraycopy(serialPacket, 0, packetCopy, 0, 24);
+        packetCopy[22] = 0;
+        packetCopy[23] = 0;
+
+        //calculate checksum
+        ByteBuffer headerBuffer = ByteBuffer.wrap(packetCopy);
+        int accumulation = 0;
+		for (int i = 0; i < lengthField/2; ++i) {
+			accumulation += 0xffff & headerBuffer.getShort();
+		}
+		accumulation = ((accumulation >> 16) & 0xffff)
+				+ (accumulation & 0xffff);
+		int checksumAcc = (short) (accumulation & 0xffff);
+
+        int checksumVer = this.checksum + checksumAcc;
+
+        if (checksumVer == -1){
+            System.out.println("Checksum ver success");
+        }
+        else{
+            System.out.println("Checksum failed");
+            return null;
+        }
 
         return this;
     }
-
-    //todo implement checksum
 
 
     @Override
@@ -172,8 +218,7 @@ public class TCPPacket {
         String ackFlag = this.ackFlag ? "A" : "-";
         String finFlag = this.finFlag ? "F" : "-";
 
-        
-        String output = synFlag + " " + ackFlag + " " + finFlag + " " + this.seqNum + " " + this.payload.length + " " + this.ackNum;
+        String output = synFlag + " " + ackFlag + " " + finFlag + " " + (this.getPayloadLength() == 0 ? "-" : "D")  + " " + this.seqNum + " " + this.payload.length + " " + this.ackNum;
 
         return output;
     }
