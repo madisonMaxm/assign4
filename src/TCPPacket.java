@@ -24,7 +24,7 @@ public class TCPPacket {
     public TCPPacket(int seqNum, int ackNum, boolean syn, boolean ack, boolean fin, byte[] payload, long timeStamp){
         if (payload == null){
             this.payload = new byte[0];
-            System.out.println( " payload length 0");
+            //System.out.println( " payload length 0");
         }
         else{
             this.payload = payload;
@@ -44,7 +44,7 @@ public class TCPPacket {
         
         this.serialPacket = serialPacket;
         this.overallLength = serialPacket.length;
-        System.out.println("constructor overall length: " + serialPacket.length);
+        //System.out.println("constructor overall length: " + serialPacket.length);
     }
 
     public void setSeqNum(int value){
@@ -119,8 +119,10 @@ public class TCPPacket {
         bb.put(zeros); //16 bits of 0s
         bb.putShort((short) 0); //zero checksum field before calculating
 
-        System.out.println("length " + overallLength);
-         if (this.checksum == 0) {
+        //add data to packet
+        bb.put(this.payload);
+
+        if (this.checksum == 0) {
             bb.rewind();
             int accumulation = 0;
             for (int i = 0; i < overallLength/2; ++i) {
@@ -132,14 +134,6 @@ public class TCPPacket {
             bb.putShort(22, this.checksum); 
         }
         
-        //add data to packet
-        bb.put(this.payload);
-
-        // Serialization Debug
-        System.out.println("Serializing TCPPacket");
-        System.out.println("Payload Length: " + this.lengthField);
-        System.out.println("Overall Packet Length (Header + Payload): " + overallLength);
-
         return data;
     }
 
@@ -151,7 +145,7 @@ public class TCPPacket {
      */
     public TCPPacket deserialize() {
 
-        System.out.println("deserializing TCPPacket");
+        //System.out.println("deserializing TCPPacket");
 
         byte headerLength = 24; //based on 6x32 bit words
 
@@ -182,8 +176,8 @@ public class TCPPacket {
         System.out.println("Total Packet Length: " + overallLength);
         */
 
-        byte[] packetCopy = new byte[lengthField];
-        System.arraycopy(serialPacket, 0, packetCopy, 0, 24);
+        byte[] packetCopy = new byte[serialPacket.length];
+        System.arraycopy(serialPacket, 0, packetCopy, 0, serialPacket.length);
         packetCopy[22] = 0;
         packetCopy[23] = 0;
 
@@ -200,14 +194,13 @@ public class TCPPacket {
         int checksumVer = this.checksum + checksumAcc;
 
         if (checksumVer == -1){
-            System.out.println("Checksum ver success");
+            return this;
         }
         else{
-            System.out.println("Checksum failed");
             return null;
         }
 
-        return this;
+        
     }
 
 
