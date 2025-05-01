@@ -504,7 +504,7 @@ public class TCPMode {
                             if (dupAckCount >= 3){
 
                                 System.out.println("retransmit, 3 acks detected");
-                                TCPPacket resendPacket = window.get(ackSeqNum - recPacket.getOverallLength());
+                                TCPPacket resendPacket = window.get(ackSeqNum);
                                 
                                 for (Map.Entry<Integer, TCPPacket> entry : window.entrySet()) {
                                     int seqNum = entry.getKey(); // sequence number of the packet
@@ -533,9 +533,9 @@ public class TCPMode {
 
                         if (ackSeqNum >= base) {
 
-                            window.entrySet().removeIf(entry -> entry.getKey() <= ackSeqNum);
+                            window.entrySet().removeIf(entry -> entry.getKey() < ackSeqNum);
 
-                            scheduledTasks.entrySet().removeIf(entry -> entry.getKey() <= ackSeqNum);
+                            scheduledTasks.entrySet().removeIf(entry -> entry.getKey() < ackSeqNum);
 
                             // slide base. if windows is empty, set high value that will be outside of range
                             if (!window.isEmpty()) {
