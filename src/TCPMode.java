@@ -496,18 +496,19 @@ public class TCPMode {
                             //Fast restransmit
                             if (dupAckCount >= 3){
 
-                                System.out.println("retransmit, 3 acks detected. received packet " + recPacket.getAckNum());
+                                System.out.println("retransmit, 3 acks detected");
+                                TCPPacket resendPacket = window.get(ackSeqNum - recPacket.getOverallLength());
 
-
-                                TCPPacket resendPacket = null;
+                                
                                 for (Map.Entry<Integer, TCPPacket> entry : window.entrySet()) {
-                                    int packetStart = entry.getKey();
-                                    int packetEnd = packetStart + entry.getValue().getPayloadLength();
-                                    if (packetEnd == ackSeqNum) {
-                                        resendPacket = entry.getValue();
-                                        break;
-                                    }
-}
+                                    int seqNum = entry.getKey(); // sequence number of the packet
+                                    TCPPacket packet = entry.getValue(); // the TCP packet
+                            
+                                    // Print relevant details of the packet, such as sequence number, payload length, timestamp, etc.
+                                    System.out.println("SeqNum: " + seqNum + ", Payload Length: " + packet.getPayloadLength() 
+                                                       + ", Timestamp: " + packet.getTimeStamp());
+                                }
+
                                 if (resendPacket != null){
                                     retransmissions++;
                                     sendPacket(resendPacket, socket, remoteIP);
