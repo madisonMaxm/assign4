@@ -497,6 +497,9 @@ public class TCPMode {
                             if (dupAckCount >= 3){
                                 TCPPacket resendPacket = window.get(ackSeqNum);
 
+                                System.out.println("retransmit, 3 acks detected");
+                                System.out.println("resend seq " + resendPacket.getSeqNum());
+
                                 if (resendPacket != null){
                                     retransmissions++;
                                     sendPacket(resendPacket, socket, remoteIP);
@@ -771,7 +774,7 @@ public class TCPMode {
                 TCPPacket finalFinRetry = receivePacket(socket);
 
                 if (finalFinRetry != null && finalFinRetry.getFinFlag()) {
-                    System.out.println("Resending final ACK due to retransmitted FIN from receiver.");
+                    //System.out.println("Resending final ACK due to retransmitted FIN from receiver.");
                     TCPPacket finalAck = new TCPPacket(seqNum, finalFinRetry.getSeqNum() + 1, false, true, false, null, System.nanoTime());
                     sendPacket(finalAck, socket, remoteIP);
                     seqNum++;
