@@ -44,7 +44,7 @@ public class TCPend{
 
         //receiver mode
         else if (args.length == 8){
-            System.out.println("Receiver initalization");
+            //System.out.println("Receiver initalization");
 
             if (!args[0].equals("-p") || !args[2].equals("-m") || !args[4].equals("-c") || !args[6].equals("-f"))
             {
