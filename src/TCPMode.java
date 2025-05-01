@@ -9,10 +9,15 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.crypto.Data;
 
@@ -35,9 +40,13 @@ public class TCPMode {
 
     TcpStates state = TcpStates.CLOSED; // initialize with closed
 
-    Long startTime = (long) 0;
+    Long startTime = (long) 0; //for calculating all packet times relative to this
 
     TimeoutCalc timeoutCalc = new TimeoutCalc();
+
+    //schedule for timers
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);  
+    private Map<Integer, ScheduledFuture<?>> scheduledTasks = new HashMap<>();
 
     enum TcpStates {
         // sender and sender+receiver states
@@ -55,7 +64,7 @@ public class TCPMode {
         LAST_ACK, // Sent own FIN, waiting for final ACK
     }
 
-    //Summary information
+    // Stats summary information
     long totalBytes =  0; //data transferred OR received
     int packetsSent = 0;
     int packetsReceived = 0;
@@ -159,6 +168,7 @@ public class TCPMode {
                 // close and clean
                 fis.close();
                 socket.close();
+                scheduler.shutdown();
 
             } catch (UnknownHostException e) {
                 e.printStackTrace();
@@ -262,7 +272,6 @@ public class TCPMode {
                 System.out.println("Duplicate ACKs: " + dupAcks);
                 System.exit(0);
             }
-
         }
     }
 
@@ -391,6 +400,7 @@ public class TCPMode {
             }
         }
         System.out.println("16 transmission attempts were made. The packet could not be sent");
+        System.exit(1);
         return null;
     }
 
@@ -403,15 +413,12 @@ public class TCPMode {
      */
     private void sendData(FileInputStream fis, DatagramSocket socket) throws IOException {
 
-        // Sliding window variables. Segments NOT bytes
         int base = 1; // oldest unack seqNum
 
         Map<Integer, TCPPacket> window = new HashMap<>(); // unack packets
-        Map<Integer, Timer> timers = new HashMap<>(); // timeout timers
 
         byte[] fileBytes = fis.readAllBytes();
         int fileLength = fileBytes.length;
-        // int dataPtr = 0;
 
          //initialize for fast retransmit and duplicate ACK tracking
          int lastAckSent = -1;
@@ -431,7 +438,7 @@ public class TCPMode {
 
                 TCPPacket packet = new TCPPacket(seqNum, ackNum, false, true, false, sendBuffer, System.nanoTime());
 
-                System.out.println("Sending packet with seqNum: " + seqNum + " (Base: " + base + "), Data length: " + sendBuffer.length);
+                //System.out.println("Sending packet with seqNum: " + seqNum + " (Base: " + base + "), Data length: " + sendBuffer.length);
 
                 sendPacket(packet, socket, remoteIP);
 
@@ -439,23 +446,19 @@ public class TCPMode {
 
                 // Start timer for this packet
                 int currentSeq = seqNum;
-                Timer timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (window.containsKey(currentSeq)) {
-                                System.out.println(
-                                        "Timeout for packet with seqNum: " + currentSeq + ", retransmitting...");
-                                retransmissions++;
-                                sendPacket(window.get(currentSeq), socket, remoteIP);
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                ScheduledFuture<?> future = scheduler.schedule(() -> {
+                try {
+                    if (window.containsKey(currentSeq)) {
+                        retransmissions++;
+                        sendPacket(window.get(currentSeq), socket, remoteIP);
                     }
-                }, timeoutCalc.getTimeOut());
-                timers.put(seqNum, timer);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, timeoutCalc.getTimeOut(), TimeUnit.MILLISECONDS);
+
+            // Store the future task to cancel it later if necessary
+            scheduledTasks.put(seqNum, future);
 
                 seqNum += sendBuffer.length;
             }
@@ -515,7 +518,7 @@ public class TCPMode {
 
                             window.entrySet().removeIf(entry -> entry.getKey() <= ackSeqNum);
 
-                            timers.entrySet().removeIf(entry -> entry.getKey() <= ackSeqNum);
+                            scheduledTasks.entrySet().removeIf(entry -> entry.getKey() <= ackSeqNum);
 
                             // slide base. if windows is empty, set high value that will be outside of range
                             if (!window.isEmpty()) {
@@ -528,13 +531,12 @@ public class TCPMode {
                                     base = Integer.MAX_VALUE;  
                                 }
                             }
-                            System.out.println("Window slide: new base = " + base);  
-
+                            //System.out.println("Window slide: new base = " + base);  
                             ackReceived = true;
                         }
                     }
                 } catch (SocketTimeoutException e) {
-                    System.out.println("Timeout waiting for ACK, retrying...");
+                    //System.out.println("Timeout waiting for ACK, retrying...");
                     // Retransmit all unacknowledged packets (those still in the window)
 
                 }
@@ -573,7 +575,7 @@ public class TCPMode {
 
                 // drop if checksum failure
                 if (recPacket == null) {
-                    System.out.println("checksum failure");
+                    //System.out.println("checksum failure");
                     continue;
                 }
 
@@ -596,11 +598,11 @@ public class TCPMode {
                 int recSeqNum = recPacket.getSeqNum();
                 byte[] dataBuffer = recPacket.getPayload();
 
-                System.out.println("Expected SeqNum: " + expectedSeqNum + ", Received SeqNum: " + recSeqNum);
-                System.out.println("Sliding window range: " + expectedSeqNum + " to " + (expectedSeqNum + sws - 1));
+                //System.out.println("Expected SeqNum: " + expectedSeqNum + ", Received SeqNum: " + recSeqNum);
+                //System.out.println("Sliding window range: " + expectedSeqNum + " to " + (expectedSeqNum + sws - 1));
 
                 if (recSeqNum < expectedSeqNum || recSeqNum >=expectedSeqNum + sws){
-                    System.out.println("Discarding packet (out of order or outside window): SeqNum " + recSeqNum);
+                    //System.out.println("Discarding packet (out of order or outside window): SeqNum " + recSeqNum);
 
                     outOfOrderPacketsDiscarded++;
                     continue;//discard packet outside of window
@@ -608,13 +610,12 @@ public class TCPMode {
 
                 //case 1: in order packet
                 if (recSeqNum == expectedSeqNum) {
-                    System.out.println("Writing data to file: SeqNum " + recSeqNum);
+                    //System.out.println("Writing data to file: SeqNum " + recSeqNum);
                     fos.write(dataBuffer);
 
                     // updated excpected seqNum
                     expectedSeqNum += dataBuffer.length;
-                    System.out.println("Expected SeqNum updated to: " + expectedSeqNum);
-
+                    //System.out.println("Expected SeqNum updated to: " + expectedSeqNum);
 
                     //remove received packet if already in buffer
                     receivedBuffer.remove(recSeqNum);
@@ -678,8 +679,7 @@ public class TCPMode {
             }
 
         }
-        // After exiting the loop, if we've processed any remaining packets, send the
-        // final ACK
+        // After exiting the loop, send final ack if more packets were processed
         if (receivedPacketsCount > 0 && state != TcpStates.CLOSED) {
             TCPPacket finalAck = new TCPPacket(seqNum, expectedSeqNum, false, true, false, null, System.nanoTime());
             sendPacket(finalAck, socket, remoteIP);
@@ -753,7 +753,7 @@ public class TCPMode {
         // Case 2: Ack for FIN and FIN flag
         else if (recPacket.getAckFlag() && recPacket.getFinFlag()) {
             //System.out.println("case 2");
-            packet = new TCPPacket(seqNum, ackNum, false, true, false, null, recPacket.getTimeStamp());  // FIXED: remove FIN
+            packet = new TCPPacket(seqNum, ackNum, false, true, false, null, recPacket.getTimeStamp()); 
             sendPacket(packet, socket, remoteIP);
 
             state = TcpStates.FIN_WAIT_2;
@@ -766,7 +766,7 @@ public class TCPMode {
 
         while (!ackReceived && attempts < 5) {
             try {
-                // Wait for any additional FIN from receiver (in case our final ACK was dropped)
+                // Wait for any additional FIN from receiver
                 socket.setSoTimeout(timeoutCalc.getTimeOut());
                 TCPPacket finalFinRetry = receivePacket(socket);
 
@@ -777,7 +777,7 @@ public class TCPMode {
                     seqNum++;
                 }
             } catch (SocketTimeoutException e) {
-                ackReceived = true;  // If no more FINs, assume receiver got our final ACK
+                ackReceived = true; 
             }
 
             attempts++;

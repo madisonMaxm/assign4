@@ -1,3 +1,6 @@
+/**
+ * Computes EMEA for packet retransmission timeouts
+ */
 public class TimeoutCalc {
 
     private double eRTT;
