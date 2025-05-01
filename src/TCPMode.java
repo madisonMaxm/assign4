@@ -496,7 +496,8 @@ public class TCPMode {
                             //Fast restransmit
                             if (dupAckCount >= 3){
 
-                                System.out.println("retransmit, 3 acks detected");
+                                System.out.println("retransmit, 3 acks detected. received packet " + recPacket.getAckNum());
+
 
                                 TCPPacket resendPacket = null;
                                 for (Map.Entry<Integer, TCPPacket> entry : window.entrySet()) {
