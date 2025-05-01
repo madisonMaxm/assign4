@@ -589,10 +589,11 @@ public class TCPMode {
                 //set timeout
                 socket.setSoTimeout((int) timeoutCalc.getTimeOut()); 
                 TCPPacket recPacket = receivePacket(socket);
+                System.out.println("packet received");
 
                 // drop if checksum failure
                 if (recPacket == null) {
-                    //System.out.println("checksum failure");
+                    System.out.println("checksum failure");
                     continue;
                 }
 
