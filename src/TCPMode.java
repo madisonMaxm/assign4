@@ -428,6 +428,13 @@ public class TCPMode {
         while (base < fileLength) {
 
             while (seqNum < base + (sws * mtu) && seqNum <= fileLength) {
+                for (Map.Entry<Integer, TCPPacket> entry : window.entrySet()) {
+                    int seqNum = entry.getKey(); // sequence number of the packet
+                    TCPPacket packet = entry.getValue(); // the TCP packet
+                    // Print relevant details of the packet, such as sequence number, payload length, timestamp, etc.
+                    System.out.println("SeqNum: " + seqNum + ", Payload Length: " + packet.getPayloadLength() 
+                                       + ", Timestamp: " + packet.getTimeStamp());
+                }
 
 
                 // send all packets in window as long as there are bytes left to send
@@ -460,7 +467,7 @@ public class TCPMode {
             // Store the future task to cancel it later if necessary
             scheduledTasks.put(seqNum, future);
             seqNum += sendBuffer.length;
-            System.out.println("seq num incrementing correctly? " +seqNum);
+            //System.out.println("seq num incrementing correctly? " +seqNum);
             }
 
             // receive ACK
