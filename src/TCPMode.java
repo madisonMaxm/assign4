@@ -368,7 +368,7 @@ public class TCPMode {
             }
 
             packetsSent++;
-            System.out.println(toString("send", payload));
+            //System.out.println(toString("send", payload));
 
             try {
                 // Wait for ACK
@@ -459,8 +459,8 @@ public class TCPMode {
 
             // Store the future task to cancel it later if necessary
             scheduledTasks.put(seqNum, future);
-
-                seqNum += sendBuffer.length;
+            seqNum += sendBuffer.length;
+            System.out.println("seq num incrementing correctly? " +seqNum);
             }
 
             // receive ACK
@@ -498,12 +498,10 @@ public class TCPMode {
 
                                 System.out.println("retransmit, 3 acks detected");
                                 TCPPacket resendPacket = window.get(ackSeqNum - recPacket.getOverallLength());
-
                                 
                                 for (Map.Entry<Integer, TCPPacket> entry : window.entrySet()) {
                                     int seqNum = entry.getKey(); // sequence number of the packet
                                     TCPPacket packet = entry.getValue(); // the TCP packet
-                            
                                     // Print relevant details of the packet, such as sequence number, payload length, timestamp, etc.
                                     System.out.println("SeqNum: " + seqNum + ", Payload Length: " + packet.getPayloadLength() 
                                                        + ", Timestamp: " + packet.getTimeStamp());
