@@ -428,13 +428,6 @@ public class TCPMode {
         while (base < fileLength) {
 
             while (seqNum < base + (sws * mtu) && seqNum <= fileLength) {
-                for (Map.Entry<Integer, TCPPacket> entry : window.entrySet()) {
-                    int seqNum = entry.getKey(); // sequence number of the packet
-                    TCPPacket packet = entry.getValue(); // the TCP packet
-                    // Print relevant details of the packet, such as sequence number, payload length, timestamp, etc.
-                    System.out.println("SeqNum: " + seqNum + ", Payload Length: " + packet.getPayloadLength() 
-                                       + ", Timestamp: " + packet.getTimeStamp());
-                }
 
 
                 // send all packets in window as long as there are bytes left to send
@@ -503,19 +496,16 @@ public class TCPMode {
                             //Fast restransmit
                             if (dupAckCount >= 3){
 
-                                System.out.println("retransmit, 3 acks detected");
                                 TCPPacket resendPacket = window.get(ackSeqNum);
                                 
-                                for (Map.Entry<Integer, TCPPacket> entry : window.entrySet()) {
-                                    int seqNum = entry.getKey(); // sequence number of the packet
-                                    TCPPacket packet = entry.getValue(); // the TCP packet
-                                    // Print relevant details of the packet, such as sequence number, payload length, timestamp, etc.
-                                    System.out.println("SeqNum: " + seqNum + ", Payload Length: " + packet.getPayloadLength() 
-                                                       + ", Timestamp: " + packet.getTimeStamp());
-                                }
 
                                 if (resendPacket != null){
                                     retransmissions++;
+
+                                    if (dupAckCount >= 17){
+                                        System.out.println("16 transmission attempts of the same packet were made. The packet is likely becoming corrupted due to congetsion");
+                                        System.exit(1);
+                                    }
                                     sendPacket(resendPacket, socket, remoteIP);
                                 }
                             }
@@ -553,8 +543,7 @@ public class TCPMode {
                         }
                     }
                 } catch (SocketTimeoutException e) {
-                    //System.out.println("Timeout waiting for ACK, retrying...");
-                    // Retransmit all unacknowledged packets (those still in the window)
+                    
 
                 }
             }
@@ -589,7 +578,7 @@ public class TCPMode {
                 //set timeout
                 socket.setSoTimeout((int) timeoutCalc.getTimeOut()); 
                 TCPPacket recPacket = receivePacket(socket);
-                System.out.println("packet received");
+                //System.out.println("packet received");
 
                 // drop if checksum failure
                 if (recPacket == null) {
@@ -615,9 +604,6 @@ public class TCPMode {
 
                 int recSeqNum = recPacket.getSeqNum();
                 byte[] dataBuffer = recPacket.getPayload();
-
-                //System.out.println("Expected SeqNum: " + expectedSeqNum + ", Received SeqNum: " + recSeqNum);
-                //System.out.println("Sliding window range: " + expectedSeqNum + " to " + (expectedSeqNum + sws - 1));
 
                 if (recSeqNum < expectedSeqNum || recSeqNum >=expectedSeqNum + sws){
                     //System.out.println("Discarding packet (out of order or outside window): SeqNum " + recSeqNum);
