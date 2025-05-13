@@ -361,9 +361,17 @@ public class TCPMode {
                 Integer.parseInt(remotePort));
 
         for (int attempt = 0; attempt < 16; attempt++) {
+            
+            if (attempt == 0){
+                socket.send(packetToSend);
+            }
             // Send packet
             socket.send(packetToSend);
             if(attempt > 0){
+
+                serialized = payload.serialize();
+                DatagramPacket retryPacket = new DatagramPacket(serialized, serialized.length, InetAddress.getByName(remoteIP), Integer.parseInt(remotePort));
+                socket.send(retryPacket);
                 retransmissions++;
             }
 
@@ -582,6 +590,10 @@ public class TCPMode {
 
                 // drop if checksum failure
                 if (recPacket == null) {
+                    checksumDrops++;
+                    TCPPacket dupAck = new TCPPacket(seqNum, ackNum, false, true, false, null, System.nanoTime());
+                    sendPacket(dupAck, socket, remoteIP);
+                    
                     System.out.println("checksum failure");
                     continue;
                 }

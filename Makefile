@@ -1,8 +1,8 @@
 sender: ./src/TCPend.class
-	java -cp ./src TCPend -p 55000 -s 127.0.0.1 -a 55001 -f testSendLong.txt -m 1000 -c 10
+	java -cp ./src TCPend -p 55000 -s 127.0.0.1 -a 55001 -f testSendLong.txt -m 100 -c 10
 
 receiver: ./src/TCPend.class
-	java -cp ./src TCPend -p 55001 -m 1000 -c 10 -f testReceive.txt
+	java -cp ./src TCPend -p 55001 -m 100 -c 10 -f testReceive.txt
 
 
 compile: ./src/TCPend.class
